@@ -7,11 +7,16 @@ Welcome to Rilan's's documentation!
 ===================================
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
    :caption: Contents:
 
    hello
-
+   c&c++/index
+   python/index
+   diary/index
+   other/index
+   event/index
+   linux/index
 
 Indices and tables
 ==================
