@@ -17,7 +17,6 @@ Welcome to Rilan's's documentation!
    other/index
    event/index
    linux/index
-   Redis reading notes/index
 
 Indices and tables
 ==================
