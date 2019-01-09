@@ -1,23 +1,22 @@
 Redis基础数据结构--链表结构源码精读
 ============
 
+# adlist是一个存储双向链表的数据结构文件.
+## adlist.h(c) - A generic doubly linked list implementation
 
-# adlist.h(c) - A generic doubly linked list implementation
-# adlist是一个存储双向链表的数据结构文件。
 链表提供了高效的节点重排能力，以及顺序性的节点访问方式，并且可以通过增删节点来灵活地调整链表的长度。
+
 作为一种常用数据结构，链表内置在很多高级的编程语言里面，因为Redis使用的C语言没有内置这种数据结构，所以Redis构建了自己的链表实现。
+
 链表在Redis中的应用非常广泛，比如列表键的底层实现之一就是链表。
+
 当一个列表键包含了数量比较多的元素，有或者列表中好汉的元素都是比较长的字符串时，Redis就会使用链表作为列表键的底层实现。
+
 使用到链表的功能有列表键，发布于订阅，慢查询，监视器等，服务器本身还使用链表来保存多个客户端的状态信息，以及使用了链表来构建客户端输出缓冲区。
-这里分析的版本是redis3.0，具体版本可在
-https://github.com/antirez/redis/tree/3.0
-下载
 
-
+这里分析的版本是redis3.0，具体版本可在https://github.com/antirez/redis/tree/3.0下载
 
 逐句分析：
-
-
 
 #ifndef __ADLIST_H__
 #define __ADLIST_H__
@@ -26,29 +25,29 @@ https://github.com/antirez/redis/tree/3.0
 共同起到包含adlist.h并避免重复包含的作用。
 
 
+# 一，数据结构部分：
 
-## 一，数据结构部分：
+listNode、list和listIter是当前链表使用的三种数据结构。
 
-/* Node, List, and Iterator are the only data structures used currently. */
-意思是listNode、list和listIter是当前使用的仅有三种数据结构。
-
-
+## 链表节点ListNode
+```
 typedef struct listNode {
     struct listNode *prev;
     struct listNode *next;
     void *value;  //通用实现，可以存放任意类型的数据
 } listNode;
-### 链表节点ListNode。
+```
 节点存储了三个指针变量：
 分别用于指向前一节点，下一节点，指向自身储存的数据。
-
-
+<br/><br/><br/>
+## 访问链表的迭代器listIter
+```
 // list迭代器
 typedef struct listIter {
     listNode *next;
     int direction;  //用于控制链表遍历的方向
 } listIter;
-### 访问链表的迭代器listIter。
+```
 存储了一个指针变量，一个int型变量：
 *next用于指向链表中的某个节点，
 direction表示迭代器访问的方向，与该变量匹配的有两个宏在h文件末尾，是
@@ -56,8 +55,9 @@ direction表示迭代器访问的方向，与该变量匹配的有两个宏在h�
 表示从头结点到尾节点的正向迭代，
 #define AL_START_TAIL 1
 表示从尾节点到头结点的逆向迭代。
-
-
+<br/><br/><br/>
+## 链表结构list
+```
 // list数据结构
 typedef struct list {
     listNode *head;
@@ -67,7 +67,8 @@ typedef struct list {
     int (*match)(void *ptr, void *key);  //自定义匹配key
     unsigned int len;
 } list;
-### 链表结构list。
+```
+
 提供了
 1，*head，*tail两个节点指针分别指向链表的头部和尾部。
 2，*(*dup)，(*free)， (*match)三个函数指针。
@@ -78,15 +79,16 @@ typedef struct list {
 
 
 
+<br/><br/><br/>
+# 二，函数声明与实现：
 
-## 二，函数声明与实现：
+## 新建一个链表
+```
 list *listCreate(void);
 * Create a new list. The created list can be freed with
  * AlFreeList(), but private value of every node need to be freed
  * by the user before to call AlFreeList().
- *
  * On error, NULL is returned. Otherwise the pointer to the new list. */
-
 
 list *listCreate(void)
 {
@@ -101,13 +103,14 @@ list *listCreate(void)
     list->match = NULL;
     return list;
 }
-### 新建一个链表。
-如果分配内存失败，返回空值；
-如果分配内存成功：依次分配list各项的值。
-返回链表。
-这里面用到了zmalloc这个函数，这个函数包含于zmalloc.c这个文件中，是redis自己实现的函数。回头再发这个文件的分析。
-
-
+```
+    如果分配内存失败，返回空值；
+    如果分配内存成功：依次分配list各项的值。
+    返回链表。
+    这里面用到了zmalloc这个函数，这个函数包含于zmalloc.c这个文件中，是redis自己实现的函数。回头再发这个文件的分析。
+<br/><br/><br/>
+## 链表释放。
+```
 void listRelease(list *list);
 /* Free the whole list.
  *
@@ -127,13 +130,14 @@ void listRelease(list *list)
     }
     zfree(list);
 }
-### 链表释放。
+```
 从链表头部开始递归至尾部，逐个释放节点。
 值得注意的是 
 if (list->free) list->free(current->value);
 这一句，关于函数指针的使用，我暂时没弄清楚list->free这个函数指针在哪里被赋的值。
-
-
+<br/><br/><br/>
+## 向链表头插入一个新节点，值为value
+```
 list *listAddNodeHead(list *list, void *value);
 /* Add a new node to the list, to head, contaning the specified 'value'
  * pointer as value.
@@ -160,16 +164,18 @@ list *listAddNodeHead(list *list, void *value)
     list->len++;
     return list;
 }
-### 向链表头插入一个新节点，值为value。
-如果分配内存失败，返回NULL；
-如果分配内存成功：
-    如果原链表为空链表，则头节点和尾节点都为新节点（原先都为NULL），
-        新节点的前一节点和下一节点都为空。
-    如果原链表不是空链表，则新节点前一节点为原链表尾节点，下一节点为NULL，
-        原尾节点的下一节点为新节点，将新节点赋值给尾节点。
-    链表长度加一，返回新链表。
+```
+    如果分配内存失败，返回NULL；
+    如果分配内存成功：
+        如果原链表为空链表，则头节点和尾节点都为新节点（原先都为NULL），
+            新节点的前一节点和下一节点都为空。
+        如果原链表不是空链表，则新节点前一节点为原链表尾节点，下一节点为NULL，
+            原尾节点的下一节点为新节点，将新节点赋值给尾节点。
+        链表长度加一，返回新链表。
 
-
+<br/><br/><br/>
+## 向链表末尾插入一个新节点，值为value
+```
 list *listAddNodeTail(list *list, void *value);
 /* Add a new node to the list, to tail, contaning the specified 'value'
  * pointer as value.
@@ -196,17 +202,21 @@ list *listAddNodeTail(list *list, void *value)
     list->len++;
     return list;
 }
-### 向链表末尾插入一个新节点，值为value。
-如果分配内存失败，返回NULL；
-如果分配内存成功：
-    新节点赋值为value。
-    如果原链表为空链表，则头节点和尾节点都为新节点（原先都为NULL），
-        新节点的前一节点和下一节点都为空。
-    如果原链表不是空链表，则新节点前一节点为原链表尾节点，下一节点为NULL，
-        原尾节点的下一节点为新节点，将新节点赋值给尾节点。
-    链表长度加一，返回新链表。
+```
+    如果分配内存失败，返回NULL；
+    如果分配内存成功：
+        新节点赋值为value。
+        如果原链表为空链表，则头节点和尾节点都为新节点（原先都为NULL），
+            新节点的前一节点和下一节点都为空。
+        如果原链表不是空链表，则
+            新节点前一节点为原链表尾节点，
+            下一节点为NULL，
+            原尾节点的下一节点为新节点，将新节点赋值给尾节点。
+        链表长度加一，返回新链表。
 
-
+<br/><br/><br/>
+## 链表中间插入节点
+```
 list *listInsertNode(list *list, listNode *old_node, void *value, int after);
 
 list *listInsertNode(list *list, listNode *old_node, void *value, int after) {
@@ -237,26 +247,29 @@ list *listInsertNode(list *list, listNode *old_node, void *value, int after) {
     list->len++;
     return list;
 }
-### 在链表list中插入节点在指定节点old_node的前或后（取决于after的值，若after为NULL，则插在old_node前，反之插在old_node后），值为value。
-如果分配内存失败，返回NULL；
-如果分配内存成功：
-    如果是插入在指定节点后：
-        设置新节点的前置节点为指定节点；
-        设置新节点的后置节点为指定节点的后置节点；
-        如果指定节点是尾节点；
-            将尾节点指针指向新节点；
-    如果是插入在指定节点前：
-        设置新节点的后置节点为指定节点；
-        设置新节点的前置节点为制定节点的前置节点；
-        如果指定节点为头结点；
-            将头结点指针指向新节点；
-    如果新节点的前置节点不为空；
-        将其后置节点设为新节点；
-    如果新节点的后置节点不为空；
-        将其前置节点设为新节点；
-    链表长度加一，返回新链表。
+```
+    在链表list中插入节点在指定节点old_node的前或后（取决于after的值，若after为NULL，则插在old_node前，反之插在old_node后），值为value。
+    如果分配内存失败，返回NULL；
+    如果分配内存成功；  
+        如果是插入在指定节点后：
+           设置新节点的前置节点为指定节点；
+            设置新节点的后置节点为指定节点的后置节点；
+            如果指定节点是尾节点；
+                将尾节点指针指向新节点；
+        如果是插入在指定节点前：
+            设置新节点的后置节点为指定节点；
+            设置新节点的前置节点为制定节点的前置节点；
+            如果指定节点为头结点；
+                将头结点指针指向新节点；
+        如果新节点的前置节点不为空；
+            将其后置节点设为新节点；
+        如果新节点的后置节点不为空；
+            将其前置节点设为新节点；
+        链表长度加一，返回新链表。
 
-
+<br/><br/><br/>
+## 从链表中删除给定节点
+```
 void listDelNode(list *list, listNode *node);
 /* Remove the specified node from the specified list.
  * It's up to the caller to free the private value of the node.
@@ -276,19 +289,21 @@ void listDelNode(list *list, listNode *node)
     zfree(node);
     list->len--;
 }
-### 从链表中删除给定节点。
-如果节点有前置节点；
-    将其前置节点的后置节点改为被删除节点的后置节点；
-否则；
-    将头结点指针指向被删除节点的后置节点；
-如果节点有后置节点；
-    将后置节点的前置节点改为被删除节点的前置节点；
-否则；
-    将尾节点指针指向被删除节点的前置节点；
-释放当前value占用的内存；
-释放该节点结构体占用的内存空间；
+```
 
-
+    如果节点有前置节点；
+        将其前置节点的后置节点改为被删除节点的后置节点；
+    否则；
+        将头结点指针指向被删除节点的后置节点；
+    如果节点有后置节点；
+        将后置节点的前置节点改为被删除节点的前置节点；
+    否则；
+        将尾节点指针指向被删除节点的前置节点；
+        释放当前value占用的内存；
+    释放该节点结构体占用的内存空间；
+<br/><br/><br/>
+## 为list创建一个迭代器iterator
+```
 listIter *listGetIterator(list *list, int direction);
 /* Returns a list iterator 'iter'. After the initialization every
  * call to listNext() will return the next element of the list.
@@ -306,16 +321,18 @@ listIter *listGetIterator(list *list, int direction)
     iter->direction = direction;
     return iter;
 }
-### 为list创建一个迭代器iterator。
-申请内存；
-如果迭代方向为正；
-    将迭代器指向头结点；
-如果迭代方向为逆；
-    迭代器指向尾节点；
-返回迭代器iter；
-listNode *listNext(listIter *iter);//返回迭代器iter指向的当前节点并更新iter  
+```
 
-
+    申请内存；
+    如果迭代方向为正；
+       将迭代器指向头结点；
+    如果迭代方向为逆；
+       迭代器指向尾节点；
+    返回迭代器iter；
+    listNode *listNext(listIter *iter);//返回迭代器iter指向的当前节点并更新iter  
+<br/><br/><br/>
+## 返回迭代器的下一个元素
+```
 /* Return the next element of an iterator.
  * It's valid to remove the currently returned element using
  * listDelNode(), but not to remove other elements.
@@ -328,14 +345,20 @@ listNode *listNext(listIter *iter);//返回迭代器iter指向的当前节点并
  * while ((node = listNext(iter)) != NULL) {
  *     doSomethingWith(listNodeValue(node));
  * }
-### 返回迭代器的下一个元素。
-使用listDelNode（）删除当前返回的元素是有效的，但不删除其他元素。
-函数返回一个指向列表下一个元素的指针，如果没有其他元素，则返回空值，因此经典用法模式为：
+ ```
+
+    使用listDelNode（）删除当前返回的元素是有效的，但不删除其他元素。
+    函数返回一个指向列表下一个元素的指针，如果没有其他元素，则返回空值，因此经典用法模式为：
+```
  * iter = listGetIterator(list,<direction>);
  * while ((node = listNext(iter)) != NULL) {
  *     doSome thingWith(listNodeValue(node));
  * }
  * */
+ ```
+<br/><br/><br/>
+## 返回迭代器的下一个元素
+ ```
 listNode *listNext(listIter *iter)
 {
     listNode *current = iter->next;
@@ -348,22 +371,26 @@ listNode *listNext(listIter *iter)
     }
     return current;
 }
-### 返回迭代器的下一个元素。
-如果迭代器现指的元素非空；
-    如果是正向迭代；
-        返回节点current为当前节点的后置节点；
-    如果是逆向迭代；
-        返回节点current为当前节点的前置节点；
-返回节点current；
+```
+    如果迭代器现指的元素非空；
+       如果是正向迭代；
+           返回节点current为当前节点的后置节点；
+       如果是逆向迭代；
+           返回节点current为当前节点的前置节点；
+    返回节点current；
+<br/><br/><br/>
 
-
+## 释放iter迭代器
+```
 void listReleaseIterator(listIter *iter); //释放iter迭代器
 /* Release the iterator memory */
 void listReleaseIterator(listIter *iter) {
     zfree(iter);
 }
-
-
+```
+<br/><br/><br/>
+## 链表复制
+```
 list *listDup(list *orig);//拷贝表头为orig的链表并返回
 /* Duplicate the whole list. On out of memory NULL is returned.
  * On success a copy of the original list is returned.
@@ -415,31 +442,30 @@ list *listDup(list *orig)
     listReleaseIterator(iter);//自行释放迭代器
     return copy;//返回拷贝副本
 }
-### 链表复制。
-创建局部变量新链表copy，迭代器iter，链表节点node；
+```
 
-为复制的链表创建一个表头
-
-复制链表的三个函数指针；
-
-设置迭代器与迭代方向；
-开始迭代；
-    如果定义有dup函数；
-    则调用dup函数进行值复制；
-    如果调用dup函数复制后的值为NULL；（个人思考是dup函数出错）
-        释放新复制的链表；
-        释放迭代器；
-        返回空值；
-    否则；
-        复制节点值value；
-    如果将新生成的node节点插入到copy尾部失败；（尾插入失败）
-        释放新复制的链表；
-        释放迭代器；
-        返回空值；（复制失败）
-释放迭代器；
-返回拷贝副本；
-
-
+    创建局部变量新链表copy，迭代器iter，链表节点node；
+    为复制的链表创建一个表头
+    复制链表的三个函数指针；
+    设置迭代器与迭代方向；
+    开始迭代；
+        如果定义有dup函数；
+        则调用dup函数进行值复制；
+        如果调用dup函数复制后的值为NULL；（个人思考是dup函数出错）
+           释放新复制的链表；
+           释放迭代器；
+           返回空值；
+      否则；
+           复制节点值value；
+      如果将新生成的node节点插入到copy尾部失败；（尾插入失败）
+           释放新复制的链表；
+           释放迭代器；
+           返回空值；（复制失败）
+    释放迭代器；
+    返回拷贝副本；
+<br/><br/><br/>
+## 查找特定值的节点
+```
 listNode *listSearchKey(list *list, void *key); //在list中查找value为key的节点并返回
 /* Search the list for a node matching a given key.
  * The match is performed using the 'match' method
@@ -472,19 +498,21 @@ listNode *listSearchKey(list *list, void *key)
     listReleaseIterator(iter);
     return NULL;
 }
-### 查找特定值的节点；
-创建迭代器，设置迭代方向为正；
-迭代开始：
-    如果有匹配函数；
-        使用匹配函数进行匹配；
-    否则；
-        如果节点值与key值匹配；
-        释放迭代器；
-        返回节点； 
-释放迭代器；
-返回NULL（没有匹配的项）；
+```
+    创建迭代器，设置迭代方向为正；
+    迭代开始：
+        如果有匹配函数；
+            使用匹配函数进行匹配；
+        否则；
+            如果节点值与key值匹配；
+            释放迭代器；
+            返回节点； 
+    释放迭代器；
+    返回NULL（没有匹配的项）；
 
-
+<br/><br/><br/>
+## 返回给定下标的节点；
+```
 listNode *listIndex(list *list, long index); //返回下标为index的节点地址
 /* Return the element at the specified zero-based index
  * where 0 is the head, 1 is the element next to head
@@ -509,35 +537,42 @@ listNode *listIndex(list *list, long index) {
     }
     return n;
 }
-### 返回给定下标的节点；
-如果下标小于零；
-    下标去相反数；
-    起始节点指向尾节点，逆向迭代直到匹配；
-    （这里没有用到迭代器，若下标超出范围，返回指向的最后一个节点的前置，即返回NULL）
-否则；
-    起始节点指向头节点，正向迭代直到匹配；
-    （若下标超出范围，返回指向的最后一个节点的后置，返回NULL）
-返回node；
-
-
+```
+    如果下标小于零；
+        下标去相反数；
+        起始节点指向尾节点，逆向迭代直到匹配；
+        （这里没有用到迭代器，若下标超出范围，返回指向的最后一个节点的前置，即返回NULL）
+    否则；
+        起始节点指向头节点，正向迭代直到匹配；
+        （若下标超出范围，返回指向的最后一个节点的后置，返回NULL）
+    返回node；
+<br/><br/><br/>
+## 在私有链表结构中创建正向迭代器
+```
 void listRewindTail(list *list, listIter *li); //将迭代器li重置为list的头结点并且设置为正向迭代
 /* Create an iterator in the list private iterator structure */
-### /*在私有链表结构中创建正向迭代器*/
+
 void listRewind(list *list, listIter *li) {
     li->next = list->head;
     li->direction = AL_START_HEAD;
 }
+```
 
-
+<br/><br/><br/>
+## 在私有链表结构中创建逆向迭代器
+```
 void listRewind(list *list, listIter *li); //将迭代器li重置为list的尾结点并且设置为逆向迭代
 /* Create an iterator in the list private iterator structure */
-### /*在私有链表结构中创建逆向迭代器*/
+
 void listRewindTail(list *list, listIter *li) {
     li->next = list->tail;
     li->direction = AL_START_TAIL;
 }
+```
 
-
+<br/><br/><br/>
+## 将尾节点插到头结点
+```
 void listRotate(list *list);//将尾节点插到头结点
 /* Rotate the list removing the tail node and inserting it to the head. */
 /*旋转列表，移除尾部节点并将其插入头部。*/
@@ -555,20 +590,22 @@ void listRotate(list *list) {
     tail->next = list->head;
     list->head = tail;
 }
-### 将尾节点插到头结点
-
-创建局部变量tail保存尾节点；
-如果链表长度小于等于一，直接返回，结束函数；
-将尾指针指向尾节点的前置节点；
-将现在尾指针指向的节点的后置节点设为NULL；
-将头结点的前置节点设为tail；
-将tail前置节点设为NULL；
-头结点指针指向tail；
+```
 
 
+    创建局部变量tail保存尾节点；
+    如果链表长度小于等于一，直接返回，结束函数；
+    将尾指针指向尾节点的前置节点；
+    将现在尾指针指向的节点的后置节点设为NULL；
+    将头结点的前置节点设为tail；
+    将tail前置节点设为NULL；
+    头结点指针指向tail；
 
 
-## 三，宏函数部分
+
+
+# 三，宏函数部分
+```
 #define listLength(l) ((l)->len)                    
 //返回链表l长度，即节点数量
 
@@ -604,7 +641,7 @@ void listRotate(list *list) {
 
 #define listGetMatchMethod(l) ((l)->match)          
 //返回链表l的比较函数
-
+```
 
 
 
