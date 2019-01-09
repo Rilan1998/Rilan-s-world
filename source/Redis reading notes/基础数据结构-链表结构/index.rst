@@ -1,13 +1,13 @@
-Redis reading notes
+Redis 基础数据结构精读
 ===================================
 
-记录Redis的源码精读与总结。
+记录Redis基础数据结构的源码精读与总结。
 Record Redis source code detailedly reading and summary.
 
 
 .. toctree::
-   :maxdepth: 4
+   :maxdepth: 3
    :caption: Contents:
 
    
-   基础数据结构-链表结构/adlist_read.md
+   adlist_read.md
