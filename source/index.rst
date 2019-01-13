@@ -7,7 +7,7 @@ Welcome to Rilan's's documentation!
 ===================================
 
 .. toctree::
-   :maxdepth: 5
+   :maxdepth: 3
    :caption: Contents:
 
    hello
