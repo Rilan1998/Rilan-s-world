@@ -1,12 +1,16 @@
 c&c++
 ===================================
 
-Record the learning summary and experience of linux.
+Record the learning summary and experience of c&c++.
 
 
 .. toctree::
    :maxdepth: 3
    :caption: Contents:
 
-
+   c++primer 学习日记 1.md
+   c++primer 学习日记2 复合类型 引用与指针.md
+   近两日关于数组名与指针学习汇总.md
+   Qt widget box 部分说明.md
+  
    
