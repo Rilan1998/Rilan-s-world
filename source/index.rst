@@ -11,6 +11,7 @@ Welcome to Rilan's world!
    :caption: Contents:
 
    hello
+   test
    c&c++/index
    python/index
    diary/index
