@@ -6,7 +6,7 @@ Record Redis source code detailedly reading and summary.
 
 
 .. toctree::
-   :maxdepth: 3
+   :maxdepth: 1
    :caption: Contents:
 
    
