@@ -7,7 +7,7 @@ Welcome to Rilan's world!
 ===================================
 
 .. toctree::
-   :maxdepth: 3
+   :maxdepth: 2
    :caption: Contents:
 
    hello
@@ -18,6 +18,7 @@ Welcome to Rilan's world!
    other/index
    event/index
    linux/index
+   Raspberry Pi/index
    Redis reading notes/index
 
 Indices and tables
