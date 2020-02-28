@@ -13,6 +13,7 @@ Welcome to Rilan's world!
    hello
    test
    c&c++/index
+   c++多线程/index
    python/index
    diary/index
    other/index
