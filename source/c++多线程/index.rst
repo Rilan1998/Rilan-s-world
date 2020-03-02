@@ -1,11 +1,11 @@
 多线程学习笔记
 ===================================
 
-Record the learning summary and experience of c&c++.
+Record the learning summary and experience of c++多线程.
 
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
    :caption: Contents:
 
 
