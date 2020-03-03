@@ -13,5 +13,5 @@ Record the learning summary and experience of c&c++.
    c++ primer 智能指针 shared_ptr类.md
    近两日关于数组名与指针学习汇总.md
    Qt widget box 部分说明.md
-  
-   
+   c++primer lambda表达式.md
+   c++primer bind函数.md
