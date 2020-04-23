@@ -15,3 +15,8 @@ Record the learning summary and experience of c&c++.
    Qt widget box 部分说明.md
    c++primer lambda表达式.md
    c++primer bind函数.md
+   tinyhttpd精读.md
+   http服务器的编写 1 底层socket.md
+   http服务器的编写 2 L/F线程池.md
+   http服务器的编写 3 epoll.md
+   httpcode.md
