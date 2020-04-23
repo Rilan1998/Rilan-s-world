@@ -14,6 +14,7 @@ Welcome to Rilan's world!
    test
    c&c++/index
    c++多线程/index
+   httpserverdemo/index
    python/index
    diary/index
    other/index
