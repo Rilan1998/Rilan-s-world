@@ -48,7 +48,7 @@ HttpStream (public EventHandle) ：
 二，启动过程与响应流程
 
 为清晰表示调用关系，将过程表示如下：
-'''
+```
 启动：
 1，main函数中构造一个HttpServer对象httpserver，绑定服务器的端口。
 2，main函数调用httpserver构造函数，在此过程中httpserver成员变量m_server也进行构造。
@@ -79,5 +79,5 @@ while（true））调用epoll_wait获取fd，并将其push入任务池（typedef
         6，HttpServer::handle_in调用httpstream.handle_in。
             7，httpstream.handle_in调用httprequest.load_packet处理请求，调用handle_request(httprequest)生成http回复，调用m_client->send发送回复。
     8，处理完成后调用epoll_ctl的del动作将该fd在epfd中删除。
-'''
+```
 在整个架构的梳理过程中发现了一些按之前思路coding时的问题，主要是响应过程的第3步，现在的代码好像是把3执行成了6，这是个很大的bug，有待修复。

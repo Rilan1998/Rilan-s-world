@@ -13,6 +13,6 @@ test markdown
 cd D:\git\
 cd Rilan-s-world/
 git add .
-git commit   这部分得
+git commit   这部分从i退出时得按一下esc
 git push
 
