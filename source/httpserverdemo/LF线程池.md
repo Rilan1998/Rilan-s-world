@@ -19,7 +19,7 @@ L/F 领导者跟随者模式 ：在LF线程池中，线程可处在3种线程状
 不谈。
 3，static void *process_task(void * arg)
 一个静态的线程任务处理函数，在该函数中不停（while（1））从线程handle队列中pop句柄并通过调用Event类的任务执行函数threadhandle->threadhandle();（在event类中实现）来处理。
-promote_leader和join_follwer作为process_task的工具函数，做到在调用process_task时，始终是leader线程在处理任务。代码不复杂，不再赘述。
+promote_leader和join_follwer作为process_task的工具函数，做到在调用process_task时，始终是leader线程在处理任务。
 
 
 ```

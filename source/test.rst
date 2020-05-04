@@ -13,6 +13,6 @@ test markdown
 cd D:\git\
 cd Rilan-s-world/
 git add .
-git commit
+git commit   这部分得
 git push
 
